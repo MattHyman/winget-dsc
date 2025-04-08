@@ -8,7 +8,6 @@
     Description          = 'DSC Resource for Windows'
     PowerShellVersion    = '7.2'
     DscResourcesToExport = @(
-        'DeveloperMode',
         'OsVersion',
         'ShowSecondsInClock',
         'EnableDarkMode',
@@ -22,7 +21,6 @@
         PSData = @{
             # Tags applied to this module. These help with module discovery in online galleries.
             Tags       = @(
-                'PSDscResource_DeveloperMode',
                 'PSDscResource_OsVersion',
                 'PSDscResource_ShowSecondsInClock',
                 'PSDscResource_EnableDarkMode',
