@@ -24,7 +24,7 @@ Describe 'List available DSC resources' {
     It 'Shows DSC Resources' {
         $expectedDSCResources = 'DeveloperMode'
         $availableDSCResources = (Get-DscResource -Module Microsoft.Windows.Setting.System).Name
-        $availableDSCResources.length | Should -Be $expectedDSCResources.Count
+        $availableDSCResources.Count | Should -Be $expectedDSCResources.Count
         $availableDSCResources | Where-Object { $expectedDSCResources -notcontains $_ } | Should -BeNullOrEmpty -ErrorAction Stop
     }
 }
