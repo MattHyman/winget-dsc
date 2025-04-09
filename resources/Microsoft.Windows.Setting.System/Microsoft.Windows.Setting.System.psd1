@@ -10,13 +10,15 @@
     Description          = 'DSC Module for Windows System Settings'
     PowerShellVersion    = '7.2'
     DscResourcesToExport = @(
-        'DeveloperMode'
+        'DeveloperMode',
+        'WindowsCapability'
     )
     PrivateData          = @{
         PSData = @{
             # Tags applied to this module. These help with module discovery in online galleries.
             Tags       = @(
-                'PSDscResource_DeveloperMode'
+                'PSDscResource_DeveloperMode',
+                'PSDscResource_WindowsCapability'
             )
 
             # Prerelease string of this module

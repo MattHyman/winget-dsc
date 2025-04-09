@@ -56,6 +56,50 @@ class DeveloperMode {
     }
 }
 
+[DSCResource()]
+class WindowsCapability {
+    [DscProperty(Key)]
+    [string]$Name
+
+    [DscProperty()]
+    [Ensure] $Ensure = [Ensure]::Present
+
+    [WindowsCapability] Get() {
+        $currentState = [WindowsCapability]::new()
+        $windowsCapability = Get-WindowsCapability -Online -Name $this.Name
+
+        if ([System.String]::IsNullOrEmpty($windowsCapability.Name)) {
+            $currentState.Ensure = [Ensure]::Absent
+        } else {
+            $currentState.Name = $windowsCapability.Name
+
+            if ($windowsCapability.State -eq 'Installed') {
+                $currentState.Ensure = [Ensure]::Present
+            } else {
+                $currentState.Ensure = [Ensure]::Absent
+            }
+        }
+
+        return $currentState
+    }
+
+    [bool] Test() {
+        $currentState = $this.Get()
+        return $currentState.Ensure -eq $this.Ensure
+    }
+
+    [void] Set() {
+        # Only make changes if changes are needed
+        if (-not $this.Test()) {
+            if ($this.Ensure -eq [Ensure]::Present) {
+                Add-WindowsCapability -Online -Name $this.Name
+            } else {
+                Remove-WindowsCapability -Online -Name $this.Name
+            }
+        }
+    }
+}
+
 #region Functions
 function DoesRegistryKeyPropertyExist {
     param (
