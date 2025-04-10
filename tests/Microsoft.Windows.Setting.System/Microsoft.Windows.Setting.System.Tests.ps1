@@ -53,53 +53,50 @@ Describe 'DeveloperMode' {
     }
 }
 
-Describe 'WindowsCapability' {
-    BeforeAll {
-        Mock -ModuleName Microsoft.Windows.Setting.System Add-WindowsCapability {} -Verifiable
-
-        Mock -ModuleName Microsoft.Windows.Setting.System Remove-WindowsCapability {} -Verifiable
-    }
-
-    It 'Add WindowsCapability' {
-
-        Mock -ModuleName Microsoft.Windows.Setting.System Get-WindowsCapability { return  @(  Name = $global:WindowsCapablityName, State = 'NotPresent') } -Verifiable -ParameterFilter {
-            $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+# InModuleScope ensures that all mocks are on the Microsoft.Windows.Setting.System module.
+InModuleScope Microsoft.Windows.Setting.System {
+    Describe 'WindowsCapability' {
+        BeforeAll {
+            Mock Dism\Add-WindowsCapability {} -Verifiable
+            Mock Dism\Remove-WindowsCapability {} -Verifiable
         }
 
-        $desiredDeveloperModeBehavior = [Ensure]::Present
-        $desiredState = @{
-            Ensure = $desiredDeveloperModeBehavior
-            Name   = $global:WindowsCapablityName
+        It 'Add WindowsCapability' {
+            Mock Dism\Get-WindowsCapability { return  @{  Name = $global:WindowsCapablityName; State = 'NotPresent' } } -Verifiable
+
+            $provider = [WindowsCapability]@{
+                Ensure = [Ensure]::Present
+                Name   = $global:WindowsCapablityName
+            }
+
+            $provider.Set()
+
+            Assert-MockCalled Dism\Get-WindowsCapability -Exactly 1 -Scope It -ParameterFilter {
+                $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+            }
+
+            Assert-MockCalled Dism\Add-WindowsCapability -Exactly 1 -Scope It -ParameterFilter {
+                $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+            }
+
         }
 
-        Invoke-DscResource -Name WindowsCapability -ModuleName Microsoft.Windows.Setting.System -Method Set -Property $desiredState
+        It 'Remove WindowsCapability' {
+            Mock Get-WindowsCapability { return  @{  Name = $global:WindowsCapablityName; State = 'Installed' } } -Verifiable
 
-        Assert-MockCalled -CommandName 'Add-WindowsCapability' -ModuleName Microsoft.Windows.Setting.System -Exactly 1 -Scope It -ParameterFilter {
-            $Name -eq $global:WindowsCapablityName -and $Online -eq $true
-        }
-        Assert-MockCalled -CommandName 'Get-WindowsCapability' -ModuleName Microsoft.Windows.Setting.System -Exactly 1 -Scope It -ParameterFilter {
-            $Name -eq $global:WindowsCapablityName -and $Online -eq $true
-        }
-    }
+            $provider = [WindowsCapability]@{
+                Ensure = [Ensure]::Absent
+                Name   = $global:WindowsCapablityName
+            }
 
-    It 'Remove WindowsCapability' {
-        Mock -ModuleName Microsoft.Windows.Setting.System Get-WindowsCapability { return  @(  Name = $global:WindowsCapablityName, State = 'Installed') } -Verifiable -ParameterFilter {
-            $Name -eq $global:WindowsCapablityName -and $Online -eq $true
-        }
+            $provider.Set()
 
-        $desiredDeveloperModeBehavior = [Ensure]::Absent
-        $desiredState = @{
-            Ensure = $desiredDeveloperModeBehavior
-            Name   = $global:WindowsCapablityName
-        }
-
-        Invoke-DscResource -Name WindowsCapability -ModuleName Microsoft.Windows.Setting.System -Method Set -Property $desiredState
-
-        Assert-MockCalled -CommandName 'Remove-WindowsCapability' -ModuleName Microsoft.Windows.Setting.System -Exactly 1 -Scope It -ParameterFilter {
-            $Name -eq $global:WindowsCapablityName -and $Online -eq $true
-        }
-        Assert-MockCalled -CommandName 'Get-WindowsCapability' -ModuleName Microsoft.Windows.Setting.System -Exactly 1 -Scope It -ParameterFilter {
-            $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+            Assert-MockCalled Remove-WindowsCapability -Exactly 1 -Scope It -ParameterFilter {
+                $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+            }
+            Assert-MockCalled Get-WindowsCapability -Exactly 1 -Scope It -ParameterFilter {
+                $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+            }
         }
     }
 }
