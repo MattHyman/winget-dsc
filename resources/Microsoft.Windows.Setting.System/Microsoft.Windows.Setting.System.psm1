@@ -58,7 +58,7 @@ class DeveloperMode {
 
 [DSCResource()]
 class WindowsCapability {
-    [DscProperty(Key)]
+    [DscProperty(Key, Mandatory)]
     [string] $Name
 
     [DscProperty()]

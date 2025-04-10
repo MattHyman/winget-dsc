@@ -5,6 +5,8 @@ using module Microsoft.Windows.Setting.System
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+$global:WindowsCapablityName = 'OpenSSH.Server~~~~0.0.1.0'
+
 <#
 .Synopsis
    Pester tests related to the Microsoft.Windows.Setting.System PowerShell module.
@@ -52,8 +54,6 @@ Describe 'DeveloperMode' {
 }
 
 Describe 'WindowsCapability' {
-
-    $WindowsCapablityName = 'OpenSSH.Server~~~~0.0.1.0'
     BeforeAll {
         Mock -ModuleName Microsoft.Windows.Setting.System Add-WindowsCapability {} -Verifiable
 
@@ -62,45 +62,45 @@ Describe 'WindowsCapability' {
 
     It 'Add WindowsCapability' {
 
-        Mock -ModuleName Microsoft.Windows.Setting.System Get-WindowsCapability { return  @(  Name = $WindowsCapablityName, State = 'NotPresent') } -Verifiable -ParameterFilter {
-            $Name -eq $WindowsCapablityName -and $Online -eq $true
+        Mock -ModuleName Microsoft.Windows.Setting.System Get-WindowsCapability { return  @(  Name = $global:WindowsCapablityName, State = 'NotPresent') } -Verifiable -ParameterFilter {
+            $Name -eq $global:WindowsCapablityName -and $Online -eq $true
         }
 
         $desiredDeveloperModeBehavior = [Ensure]::Present
         $desiredState = @{
             Ensure = $desiredDeveloperModeBehavior
-            Name   = $WindowsCapablityName
+            Name   = $global:WindowsCapablityName
         }
 
         Invoke-DscResource -Name WindowsCapability -ModuleName Microsoft.Windows.Setting.System -Method Set -Property $desiredState
 
-        Assert-MockCalled -CommandName 'Add-WindowsCapability' -Exactly 1 -Scope It -ParameterFilter {
-            $Name -eq $WindowsCapablityName -and $Online -eq $true
-        } -Verifiable
-        Assert-MockCalled -CommandName 'Get-WindowsCapability' -Exactly 1 -Scope It -ParameterFilter {
-            $Name -eq $WindowsCapablityName -and $Online -eq $true
-        } -Verifiable
+        Assert-MockCalled -CommandName 'Add-WindowsCapability' -ModuleName Microsoft.Windows.Setting.System -Exactly 1 -Scope It -ParameterFilter {
+            $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+        }
+        Assert-MockCalled -CommandName 'Get-WindowsCapability' -ModuleName Microsoft.Windows.Setting.System -Exactly 1 -Scope It -ParameterFilter {
+            $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+        }
     }
 
     It 'Remove WindowsCapability' {
-        Mock -ModuleName Microsoft.Windows.Setting.System Get-WindowsCapability { return  @(  Name = $WindowsCapablityName, State = 'Installed') } -Verifiable -ParameterFilter {
-            $Name -eq $WindowsCapablityName -and $Online -eq $true
+        Mock -ModuleName Microsoft.Windows.Setting.System Get-WindowsCapability { return  @(  Name = $global:WindowsCapablityName, State = 'Installed') } -Verifiable -ParameterFilter {
+            $Name -eq $global:WindowsCapablityName -and $Online -eq $true
         }
 
         $desiredDeveloperModeBehavior = [Ensure]::Absent
         $desiredState = @{
             Ensure = $desiredDeveloperModeBehavior
-            Name   = $WindowsCapablityName
+            Name   = $global:WindowsCapablityName
         }
 
         Invoke-DscResource -Name WindowsCapability -ModuleName Microsoft.Windows.Setting.System -Method Set -Property $desiredState
 
-        Assert-MockCalled -CommandName 'Remove-WindowsCapability' -Exactly 1 -Scope It -ParameterFilter {
-            $Name -eq $WindowsCapablityName -and $Online -eq $true
-        } -Verifiable
-        Assert-MockCalled -CommandName 'Get-WindowsCapability' -Exactly 1 -Scope It -ParameterFilter {
-            $Name -eq $WindowsCapablityName -and $Online -eq $true
-        } -Verifiable
+        Assert-MockCalled -CommandName 'Remove-WindowsCapability' -ModuleName Microsoft.Windows.Setting.System -Exactly 1 -Scope It -ParameterFilter {
+            $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+        }
+        Assert-MockCalled -CommandName 'Get-WindowsCapability' -ModuleName Microsoft.Windows.Setting.System -Exactly 1 -Scope It -ParameterFilter {
+            $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+        }
     }
 }
 
