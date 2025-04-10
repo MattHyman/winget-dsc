@@ -22,7 +22,7 @@ BeforeAll {
 
 Describe 'List available DSC resources' {
     It 'Shows DSC Resources' {
-        $expectedDSCResources = 'DeveloperMode'. 'WindowsCapability'
+        $expectedDSCResources = 'DeveloperMode', 'WindowsCapability'
         $availableDSCResources = (Get-DscResource -Module Microsoft.Windows.Setting.System).Name
         $availableDSCResources.Count | Should -Be $expectedDSCResources.Count
         $availableDSCResources | Where-Object { $expectedDSCResources -notcontains $_ } | Should -BeNullOrEmpty -ErrorAction Stop
@@ -67,7 +67,10 @@ Describe 'WindowsCapability' {
         }
 
         $desiredDeveloperModeBehavior = [Ensure]::Present
-        $desiredState = @( Ensure = $desiredDeveloperModeBehavior, Name = $WindowsCapablityName )
+        $desiredState = @{
+            Ensure = $desiredDeveloperModeBehavior
+            Name   = $WindowsCapablityName
+        }
 
         Invoke-DscResource -Name WindowsCapability -ModuleName Microsoft.Windows.Setting.System -Method Set -Property $desiredState
 
@@ -85,7 +88,10 @@ Describe 'WindowsCapability' {
         }
 
         $desiredDeveloperModeBehavior = [Ensure]::Absent
-        $desiredState = @( Ensure = $desiredDeveloperModeBehavior, Name = $WindowsCapablityName )
+        $desiredState = @{
+            Ensure = $desiredDeveloperModeBehavior
+            Name   = $WindowsCapablityName
+        }
 
         Invoke-DscResource -Name WindowsCapability -ModuleName Microsoft.Windows.Setting.System -Method Set -Property $desiredState
 

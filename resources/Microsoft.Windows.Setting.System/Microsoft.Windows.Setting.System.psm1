@@ -59,7 +59,7 @@ class DeveloperMode {
 [DSCResource()]
 class WindowsCapability {
     [DscProperty(Key)]
-    [string]$Name
+    [string] $Name
 
     [DscProperty()]
     [Ensure] $Ensure = [Ensure]::Present
