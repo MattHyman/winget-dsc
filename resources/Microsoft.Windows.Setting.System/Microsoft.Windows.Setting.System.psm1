@@ -66,7 +66,7 @@ class WindowsCapability {
 
     [WindowsCapability] Get() {
         $currentState = [WindowsCapability]::new()
-        $windowsCapability = Dism\Get-WindowsCapability -Online -Name $this.Name
+        $windowsCapability = Get-WindowsCapability -Online -Name $this.Name
 
         if ([System.String]::IsNullOrEmpty($windowsCapability.Name)) {
             $currentState.Ensure = [Ensure]::Absent
@@ -92,9 +92,9 @@ class WindowsCapability {
         # Only make changes if changes are needed
         if (-not $this.Test()) {
             if ($this.Ensure -eq [Ensure]::Present) {
-                Dism\Add-WindowsCapability -Online -Name $this.Name
+                Add-WindowsCapability -Online -Name $this.Name
             } else {
-                Dism\Remove-WindowsCapability -Online -Name $this.Name
+                Remove-WindowsCapability -Online -Name $this.Name
             }
         }
     }

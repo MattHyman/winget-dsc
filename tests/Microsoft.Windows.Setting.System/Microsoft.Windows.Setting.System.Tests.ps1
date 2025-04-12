@@ -5,8 +5,6 @@ using module Microsoft.Windows.Setting.System
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-$global:WindowsCapablityName = 'OpenSSH.Server~~~~0.0.1.0'
-
 <#
 .Synopsis
    Pester tests related to the Microsoft.Windows.Setting.System PowerShell module.
@@ -53,51 +51,185 @@ Describe 'DeveloperMode' {
     }
 }
 
+$global:WindowsCapablityName = 'OpenSSH.Server~~~~0.0.1.0'
+
+$global:winCapPresentCommonProvider = [WindowsCapability]@{
+    Ensure = [Ensure]::Present
+    Name   = $global:WindowsCapablityName
+}
+
+$global:winCapAbsentCommonProvider = [WindowsCapability]@{
+    Ensure = [Ensure]::Absent
+    Name   = $global:WindowsCapablityName
+}
+
 # InModuleScope ensures that all mocks are on the Microsoft.Windows.Setting.System module.
 InModuleScope Microsoft.Windows.Setting.System {
     Describe 'WindowsCapability' {
+
         BeforeAll {
-            Mock Dism\Add-WindowsCapability {} -Verifiable
-            Mock Dism\Remove-WindowsCapability {} -Verifiable
+            Mock Add-WindowsCapability {}
+            Mock Remove-WindowsCapability {}
         }
 
-        It 'Add WindowsCapability' {
-            Mock Dism\Get-WindowsCapability { return  @{  Name = $global:WindowsCapablityName; State = 'NotPresent' } } -Verifiable
+        Context 'Get' {
 
-            $provider = [WindowsCapability]@{
-                Ensure = [Ensure]::Present
-                Name   = $global:WindowsCapablityName
+            It 'WindowsCapability returns absent when not present with null name when capability does not exist' {
+                Mock Get-WindowsCapability { return  @{  Name = ''; State = 'NotPresent' } }
+
+                $nonexistantCapabilityName = 'nonexistantCapability'
+
+                $getNonExistantCapabilityProvider = [WindowsCapability]@{
+                    Ensure = [Ensure]::Present
+                    Name   = $nonexistantCapabilityName
+                }
+
+                $getResourceResult = $getNonExistantCapabilityProvider.Get()
+                $getResourceResult.Ensure | Should -Be 'Absent'
+                $getResourceResult.Name | Should -Be $null
+
+                Should -Invoke Get-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $nonexistantCapabilityName -and $Online -eq $true
+                }
             }
 
-            $provider.Set()
+            It 'WindowsCapability returns absent when not present with name when capability exists' {
+                Mock Get-WindowsCapability { return  @{  Name = $global:WindowsCapablityName; State = 'NotPresent' } }
 
-            Assert-MockCalled Dism\Get-WindowsCapability -Exactly 1 -Scope It -ParameterFilter {
-                $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+                $getResourceResult = $global:winCapPresentCommonProvider.Get()
+                $getResourceResult.Ensure | Should -Be 'Absent'
+                $getResourceResult.Name | Should -Be $global:WindowsCapablityName
+
+                Should -Invoke Get-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+                }
             }
 
-            Assert-MockCalled Dism\Add-WindowsCapability -Exactly 1 -Scope It -ParameterFilter {
-                $Name -eq $global:WindowsCapablityName -and $Online -eq $true
-            }
+            It 'WindowsCapability returns present when installed' {
+                Mock Get-WindowsCapability { return  @{  Name = $global:WindowsCapablityName; State = 'Installed' } }
 
+                $getResourceResult = $global:winCapPresentCommonProvider.Get()
+                $getResourceResult.Ensure | Should -Be 'Present'
+                $getResourceResult.Name | Should -Be $global:WindowsCapablityName
+
+                Should -Invoke Get-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+                }
+            }
         }
 
-        It 'Remove WindowsCapability' {
-            Mock Get-WindowsCapability { return  @{  Name = $global:WindowsCapablityName; State = 'Installed' } } -Verifiable
+        Context 'Test' {
 
-            $provider = [WindowsCapability]@{
-                Ensure = [Ensure]::Absent
-                Name   = $global:WindowsCapablityName
+            It 'Test for presense should return false name when capability does not exist' {
+                Mock Get-WindowsCapability { return  @{  Name = ''; State = 'NotPresent' } }
+
+                $nonexistantCapabilityName = 'nonexistantCapability'
+
+                $getNonExistantCapabilityProvider = [WindowsCapability]@{
+                    Ensure = [Ensure]::Present
+                    Name   = $nonexistantCapabilityName
+                }
+
+                $testResourceResult = $getNonExistantCapabilityProvider.Test()
+                $testResourceResult | Should -BeFalse
+
+                Should -Invoke Get-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $nonexistantCapabilityName -and $Online -eq $true
+                }
             }
 
-            $provider.Set()
+            It 'Test for absense should return true name when capability does not exist' {
+                Mock Get-WindowsCapability { return  @{  Name = ''; State = 'NotPresent' } }
 
-            Assert-MockCalled Remove-WindowsCapability -Exactly 1 -Scope It -ParameterFilter {
-                $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+                $nonexistantCapabilityName = 'nonexistantCapability'
+
+                $getNonExistantCapabilityProvider = [WindowsCapability]@{
+                    Ensure = [Ensure]::Absent
+                    Name   = $nonexistantCapabilityName
+                }
+
+                $testResourceResult = $getNonExistantCapabilityProvider.Test()
+                $testResourceResult | Should -BeTrue
+
+                Should -Invoke Get-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $nonexistantCapabilityName -and $Online -eq $true
+                }
             }
-            Assert-MockCalled Get-WindowsCapability -Exactly 1 -Scope It -ParameterFilter {
-                $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+
+            It 'Test for presense should return false capability exists but is not installed' {
+                Mock Get-WindowsCapability { return  @{  Name = $global:WindowsCapablityName; State = 'NotPresent' } }
+
+                $testResourceResult = $global:winCapPresentCommonProvider.Test()
+                $testResourceResult | Should -BeFalse
+
+                Should -Invoke Get-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+                }
+            }
+
+            It 'Test for presense should return true if capability exists and is installed' {
+                Mock Get-WindowsCapability { return  @{  Name = $global:WindowsCapablityName; State = 'Installed' } }
+
+                $testResourceResult = $global:winCapPresentCommonProvider.Test()
+                $testResourceResult | Should -BeTrue
+
+                Should -Invoke Get-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+                }
+            }
+
+            It 'Test for absense should return true if capability exists but is not installed' {
+                Mock Get-WindowsCapability { return  @{  Name = $global:WindowsCapablityName; State = 'NotPresent' } }
+
+                $testResourceResult = $global:winCapAbsentCommonProvider.Test()
+                $testResourceResult | Should -BeTrue
+
+                Should -Invoke Get-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+                }
+            }
+
+            It 'Test for absense should return false if capability exists and is installed' {
+                Mock Get-WindowsCapability { return  @{  Name = $global:WindowsCapablityName; State = 'Installed' } }
+
+                $testResourceResult = $global:winCapAbsentCommonProvider.Test()
+                $testResourceResult | Should -BeFalse
+
+                Should -Invoke Get-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+                }
             }
         }
+
+        Context 'Set' {
+            It 'Add WindowsCapability when not present' {
+                Mock Get-WindowsCapability { return  @{  Name = $global:WindowsCapablityName; State = 'NotPresent' } }
+
+                $winCapPresentCommonProvider.Set()
+
+                Should -Invoke Get-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+                }
+
+                Should -Invoke Add-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+                }
+            }
+
+            It 'Remove WindowsCapability when present' {
+                Mock Get-WindowsCapability { return  @{  Name = $global:WindowsCapablityName; State = 'Installed' } } -Verifiable
+
+                $winCapAbsentCommonProvider.Set()
+
+                Should -Invoke Remove-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+                }
+                Should -Invoke Get-WindowsCapability -Times 1 -Exactly -ParameterFilter {
+                    $Name -eq $global:WindowsCapablityName -and $Online -eq $true
+                }
+            }
+        }
+
     }
 }
 
