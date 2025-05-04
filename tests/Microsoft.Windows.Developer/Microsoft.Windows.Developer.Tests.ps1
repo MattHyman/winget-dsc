@@ -579,7 +579,7 @@ InModuleScope Microsoft.Windows.Developer {
 
    Describe 'FirewallRule' {
       BeforeAll {
-         Mock GetNetFirewallPortFilter {
+         Mock Get-NetFirewallPortFilter {
             return @{
                LocalPort = 80, 443
                Protocol  = 'TCP'

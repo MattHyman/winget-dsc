@@ -854,7 +854,7 @@ class FirewallRule {
             }
         }
 
-        $properties = $rule | GetNetFirewallPortFilter
+        $properties = $rule | Get-NetFirewallPortFilter
         return @{
             Name        = $rule.Name
             DisplayName = $rule.DisplayName
@@ -1024,12 +1024,5 @@ function ConvertTo-FirewallRuleNameEscapedString {
     )
 
     return $Name.Replace('[', '`[').Replace(']', '`]').Replace('*', '`*')
-}
-
-# Workaround mock issue for Get-NetFirewallPortFilter
-function GetNetFirewallPortFilter {
-    process {
-        return $_ | Get-NetFirewallPortFilter
-    }
 }
 #endregion Functions
